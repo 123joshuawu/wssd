@@ -1,0 +1,26 @@
+const UNSPLASH_BASE_URL = 'https://api.unsplash.com';
+const UNSPLASH_API_KEY = '5ba60f4d3426529cbf585dd014ed2619740d1ee6c5c600870b6cf3ec76b033b3';
+    // function testUnsplash() {
+    //     console.log("testtttting");
+    //     $http({
+    //         method: 'GET',
+    //         url: UNSPLASH_BASE_URL + '/photos' + '?',
+    //         params: {
+    //             'client_id': UNSPLASH_API_KEY
+    //         },
+    //         // data,
+    //         headers: {
+    //             'Accept-Version': 'v1',
+        
+    //         }
+    //     }).then(({data, headers}) => {
+    //         console.log('response');
+    //         console.log(data);
+    //         // console.log(JSON.stringify(response));
+    //         console.log(headers())
+    //     }, (err) => {
+    //         console.log('err');
+    //         console.log(err);
+    //         console.log(JSON.stringify(err));
+    //     });
+    // }

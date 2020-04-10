@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+		<title>TweetTicker</title>
+	</head>
+	<body>
+
+		<div class="container">
+			<div class="row">
+				<div class="col-auto" >
+					<img src="twitter.png" style="width:50px;height:50px"/>
+				</div>
+				<div class="col-auto">
+					<h1>Tweet Ticker</h1>
+				</div>
+			</div>
+			<div class="row" style="margin:-10px 0px -10px 0px;">
+				<div class="col text-right small" style="padding-right:0px;">
+					Showing tweets <span id="startIndex" class="tweetIndexRange">1</span> - <span id="endIndex" class="tweetIndexRange">5</span>
+				</div>
+			</div>
+			<div class="row">
+				<div id="tweetsContainer" class="col"></div>
+			</div>
+		</div>
+		
+		<script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>	
+		<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+		
+		<script type="text/javascript" language="javascript" src="TwitterTweets17.json"></script>
+
+		<script type="text/javascript">
+			const TOTAL_TWEETS = tweets.length;
+			const NUMBER_OF_TWEETS_SHOWN = 5;
+			const CYCLE_DURATION = 3000;
+
+			const DEFAULT_PROFILE_IMAGE_URL = "https://abs.twimg.com/sticky/default_profile_images/default_profile_1_normal.png";
+
+			var tweetIndex = 0;
+
+			// Replaces obj.html with <img> pointing to imageUrl
+			// If imageUrl does not exist, use default profile image url
+			function insertImage (obj, imageUrl) {
+				if (imageUrl) {
+					$.get(imageUrl).done(function () {
+						obj.html(`<img src="${imageUrl}" class="rounded-circle img-fluid"></img>`);
+					}).fail(function () {
+						obj.html(`<img src="${DEFAULT_PROFILE_IMAGE_URL}" class="rounded-circle img-fluid"></img>`);
+					});
+				}
+			}
+
+			// Returns string containing html content of tweetRow
+			function generateTweetHtml (index, name, username, text) {
+				return ""
+					// Do not display tweetIndexContainer on mobile
+					+ `<div class="tweetIndexContainer col-0 col-sm-3 text-right d-none d-sm-block">`
+						+ `<span id="tweetIndex">${index + 1})</span>`
+						+ `${username} <br> ${generateLinkToUser(name)}</div>`
+					+ `<div class="tweetUserImageContainer col-2 col-sm-1 text-center"></div>`
+					+ `<div class="tweetTextContainer col-10 col-sm-8">${text}</div>`
+				;
+			}
+
+			// Returns copy of str with newText replacing indicesRange[0] + offset and indicesRange[1] + offset
+			function replaceSubstring(str, indicesRange, newText, offset) {
+				return str.substr(0, indicesRange[0] + offset) + newText + str.substr(indicesRange[1] + offset);
+			}
+
+			// Return <a> that opens twitter hashtag page
+			function generateLinkToHashtag(hashtag) {
+				return `<a href="https://twitter.com/search?q=%23${hashtag}" target="_blank">#${hashtag}</a>`;
+			}
+
+			// Return <a> that opens link
+			function generateLinkToUrl(urlObj) {
+				if (urlObj.url.length === 0) {
+					return "";
+				} else {
+					return `<a href="${urlObj.url}" target="_blank">${urlObj.display_url}</a>`;
+				}
+			}
+
+			// Return <a> that opens twitter user profile page
+			function generateLinkToUser(username) {
+				return `<a href="https://twitter.com/${username}" target="_blank">@${username}</a>`;
+			}
+
+			// Embed links to entities in text
+			function addEntitiesToText(text, entities) {
+
+				const replacements = [];
+
+				// Collect all entities keeping track of indices and text
+				for (let hashtag of entities.hashtags) {
+					replacements.push({indices: hashtag.indices, text: generateLinkToHashtag(hashtag.text)});
+				}
+
+				for (let url of entities.urls) {
+					replacements.push({indices: url.indices, text: generateLinkToUrl(url)});
+				}
+
+				for (let user_mention of entities.user_mentions) {
+					replacements.push({indices: user_mention.indices, text: generateLinkToUser(user_mention.screen_name)});
+				}
+
+				if (entities.media) {
+					for (let media of entities.media) {
+						replacements.push({indices: media.indices, text: generateLinkToUrl(media)});
+					}
+				}
+				
+				// Sort by start index (indices[0])
+				replacements.sort(function (r1, r2) {
+					return r1.indices[0] - r2.indices[0];
+				});
+
+				// Embed links into text
+				let offset = 0;
+				for (let r of replacements) {
+					text = replaceSubstring(text, r.indices, r.text, offset);
+					offset += r.text.length - (r.indices[1] - r.indices[0]);
+				}
+
+				return text;
+			}
+
+			// Creates the html for a tweetRow and fills it with information from list of tweets
+			// If rowIndex is undefined, generate the next NUMBER_OF_TWEETS_SHOWN tweets else
+			//  generate 1 tweet for the specified rowIndex
+			function cycleTweets (rowIndex) {
+				let tweet;
+				let i = (rowIndex === undefined) ? 0 : rowIndex;
+
+				const iterations = (rowIndex === undefined) ? NUMBER_OF_TWEETS_SHOWN : i + 1;
+
+				for (; i < iterations; i++) {
+					if (tweetIndex >= TOTAL_TWEETS) {
+						tweetIndex = 0;
+					}
+
+					tweet = tweets[tweetIndex];
+
+					if (tweet.user) {
+						$(`#${i}`).html(generateTweetHtml(
+											tweetIndex, 
+											tweet.user.screen_name,
+											tweet.user.name, 
+											addEntitiesToText(tweet.text, tweet.entities)));
+						insertImage($(`#${i}`).children('.tweetUserImageContainer'), tweet.user.profile_image_url_https);
+					} else {
+						i--;
+					}
+
+					tweetIndex++;
+				}
+			}
+
+			// Helper function to keep prevent scrollbar from 'overscrolling'
+			function getScrollTop() {
+			    if (typeof window.pageYOffset !== 'undefined') {
+			        return window.pageYOffset;
+			    }
+			    var body = document.body,
+			        docElement = document.documentElement;
+			    docElement = (docElement.clientHeight) ? docElement : body;
+			    return docElement.scrollTop;
+			}
+
+			// Returns a random value from obj
+			function randomProperty (obj) {
+			    const keys = Object.keys(obj)
+			    return obj[keys[ keys.length * Math.random() << 0]];
+			};
+
+			// Used to prevent overscrolling during animations
+			// Defines total content height and is set after each transition
+			var maxViewableHeight;
+			
+			$(document).ready(function () {
+				// Initialize landing page and construct initial tweets
+				for (let i = 0; i < NUMBER_OF_TWEETS_SHOWN; i++) {
+					$('#tweetsContainer').append(`<div id="${i}" class="row tweetContainer rounded"></div>`);
+				}
+				cycleTweets();
+				maxViewableHeight = $('body').height();
+
+				// Variables used for animations
+				const duration = 750;	// Duration of animation in ms
+				// Distances to move tweetRow offscreen
+				const horizontalOffset = $('#0').width() + $('#0').offset().left;
+				const maxVerticalOffset = $('#4').height() + $('#4').offset().top;
+
+				// Actions define a single stage of the animation
+				const actions = {
+					slideLeft: {left: `-=${horizontalOffset}`},
+					slideRight: {left: `+=${horizontalOffset}`},
+					fadeIn: {opacity: "1"},
+					fadeOut: {opacity: "0"},
+					slideUp: {top: `+=${maxVerticalOffset}`},
+					slideDown: {top: `-=${maxVerticalOffset}`}
+				}
+
+				// Animations are composed of two stages: in and out
+				// in is the action that will display the tweet while
+				// out is the action that will hide the tweet
+				const animations = {
+					slideLeft: {
+						in: actions.slideRight,
+						out: actions.slideLeft
+					},
+					slideRight: {
+						in: actions.slideLeft,
+						out: actions.slideRight
+					},
+					fade: {
+						in: actions.fadeIn,
+						out: actions.fadeOut
+					},
+					slideUp: {
+						in: actions.slideDown,
+						out: actions.slideUp
+					},
+					slideDown: {
+						in: actions.slideUp,
+						out: actions.slideDown
+					}
+				}
+
+				// Prevent overscrolling during animations
+				// Specifically the slide down action
+				window.onscroll = function (e) {
+					var scrollTop = getScrollTop();
+				    if (scrollTop + window.innerHeight > maxViewableHeight) {
+				        e.preventDefault();
+				        window.scrollTo(0, maxViewableHeight - window.innerHeight);
+				        return false;
+				    }
+				}
+
+				// Tweet transitions 
+				setInterval(function () {
+					$('#0, #1, #2, #3, #4').each(function (i) {
+						// Choose a random animation
+						const animation = randomProperty(animations);
+						
+						// Start animation of each tweetRow in sequence with slight delay
+						$(this).delay( i*(duration/5) ).animate(animation.out, duration, "swing", function () {
+
+							// When tweetRow is hidden, change content to next tweet
+							cycleTweets(i);
+							$(this).animate(animation.in, duration, undefined, i < 4 ? "swing" : function () {
+								maxViewableHeight = $('body').height();
+							});
+
+							if (i === 0) {
+								$('#startIndex').html(`${tweetIndex}`);
+							}
+
+							if (i === 4) {
+								$('#endIndex').html(`${tweetIndex}`);
+							}
+							
+						});
+					});
+				}, CYCLE_DURATION);
+				
+			});
+		</script>
+
+		<style>
+			.tweetContainer {
+				border: 1px solid lightgrey;
+				position: relative;
+				margin: 15px 0px 15px 0px;
+				padding: 5px 0px 5px 0px;
+			}
+
+			.tweetIndexContainer {
+				padding-right:10px;
+			}
+
+			.tweetTextContainer {
+				padding-left: 10px;
+			}
+
+			#tweetIndex, .tweetIndexRange {
+				color: #00acee;
+			}
+
+			#tweetIndex { 
+				float: left;
+			}
+
+			.tweetUserImageContainer {
+				padding:0px;
+			}
+
+			.container {
+				padding-top: 10px;
+				padding-bottom: 10px;
+			}
+
+			body {
+				/*Prevent horizontal scroll bar*/
+				overflow-x: hidden;
+			}
+
+		</style>
+	</body>
+</html>

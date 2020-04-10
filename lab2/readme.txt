@@ -1,0 +1,8 @@
+Joshua Wu
+wuj16
+
+Initially I did not have a clear picture of what the end design would look like so I started out by displaying basic weather information on a card. A lot of time was spent reading Bootstrap documentation and understanding the full set of provided tools. After the card was complete, drawing inspiration from Bootstrap examples, I decided to include the forecast information as extensions to the bottom of the card. Additionally, I decided that each card would represent a day and the user would move through the times of day through up and down arrows and move through the days of the week via left and right arrows. After a bit of research, I chanced upon a vanilla JS implementation called Slidr.js and the next portion of time was spent reading its documentation. Getting the left and right movement implemented was relatively straightforward, however due to the limited nature of the library, the up and down movement was not supported. After some googling, I chanced upon the Collapse feature in Bootstrap which was exactly what I was looking for. A large amount of time was spent shoving the new Collapse feature into my existing code and getting everything working and looking as intended. 
+
+Asides from developing the front end, I also decided to experiment with using Webpack during development. In hindsight I should have tried using Webpack embedded with ExpressJS instead of running them separately. 
+
+Overall, I felt that I had the most trouble trying to get everything in the right place. Additionally, the incremental additions in features also caused a lot of time to be spent on debugging. A lot of the bugs could have been easily avoided in Typescript which is an avenue I hope to explore in the future. 

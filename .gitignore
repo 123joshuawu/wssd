@@ -1,0 +1,7 @@
+quiz*
+node_modules
+*.zip
+.DS_Store
+.env
+*dist
+*.pem

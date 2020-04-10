@@ -1,0 +1,26 @@
+{
+  "name": "lab4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon --ignore photoApp -e js,env | pino-pretty -c -t",
+    "start": "NODE_ENV=production node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "js2xmlparser": "^4.0.1",
+    "json2csv": "^5.0.0",
+    "mongodb": "^3.5.5",
+    "pino": "^5.16.0",
+    "socket.io": "^2.3.0"
+  },
+  "devDependencies": {
+    "cors": "^2.8.5",
+    "express-pino-logger": "^4.0.0"
+  }
+}

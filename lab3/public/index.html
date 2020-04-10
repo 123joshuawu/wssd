@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html ng-app="app">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>App</title>
+    <script type="text/javascript" src="/assets/bundle.js"></script>
+  </head>
+  <body ng-controller="mainController">
+    <div class="card" ng-repeat="api in mainViewList" ng-if="api.API">
+      <div class="card-header">
+        <small class="text-muted">{{ api.Category }}</small>
+      </div>
+
+        <iframe ng-show="api.canFrameLink" src="{{ trustSrc(api.Link) }}" scrolling="no" sandbox>
+          Not supported
+        </iframe>
+
+      <div class="card-body">
+        <div class="card-content">
+          <h5 class="card-title">{{ api.API }}</h5>
+          <p class="card-text">{{ api.Description }}</p>
+        </div>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item" ng-show="api.Link"><a href="{{ api.Link }}">Link</a></li>
+        <li class="list-group-item" ng-show="api.Auth">Auth: {{ api.Auth }}</li>
+        <li class="list-group-item" ng-show="api.Cors=='yes'">CORS</li>
+        <li class="list-group-item" ng-show="api.HTTPS">HTTPS</li>
+      </ul>
+    </div>
+    <div id="spacer" style="min-height:550px;"></div>
+
+    <div class="container">
+      <div class="row justify-content-center my-2">
+        <div class="col-auto">
+          <button class="btn btn-primary" ng-click="getRandom()">Random</button>
+        </div>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-auto my-1" ng-repeat="category in categoriesList">
+          <button class="btn btn-secondary" ng-click="getRandom({category})">{{ category }}</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      iframe {
+        overflow: hidden;
+        border: 0;
+      }
+
+      .card {
+        position: absolute;
+        width: 300px;
+        left: 50%;
+        top: 30px;
+        transform: translate(-50%, 0%);
+      }
+
+      /* Small devices (landscape phones, 576px and up) */
+      @media (min-width: 576px) { 
+        .card { width: 350px; } 
+      }
+
+      /* Medium devices (tablets, 768px and up) */
+      @media (min-width: 768px) { 
+        .card { width: 400px; } 
+      }
+
+      @-webkit-keyframes slide-out {
+        from { left: 0% }
+        to { left: -50% }
+      }
+
+      @-moz-keyframes slide-out {
+        from { left: 0% }
+        to { left: -50% }
+      }
+
+      @-o-keyframes slide-out {
+        from { left: 0% }
+        to { left: -50% }
+      }
+
+      @keyframes slide-out {
+        from { left: 0% }
+        to { left: -50% }
+      }
+
+      .card.ng-move {
+        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        -moz-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        -o-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        left: 50%;
+        opacity: 1;
+      }
+
+      .card.ng-move.ng-move-active {
+        left: 0%;
+        opacity: 0.2;
+      }
+
+      .card.ng-enter {
+        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        -moz-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        -o-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 2s;
+        left: 100%;
+      }
+
+      .card.ng-enter.ng-enter-active {
+        left: 50%;
+      }
+
+      .card.ng-leave {
+        animation: 2s slide-out;
+      }
+
+
+      body, .row {
+        overflow-x: hidden;
+      }
+    </style>
+  </body>
+</html>

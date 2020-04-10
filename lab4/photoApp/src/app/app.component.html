@@ -1,0 +1,71 @@
+<div
+  class="root mat-typography"
+  infiniteScroll
+  [infiniteScrollDistance]="2"
+  [infiniteScrollThrottle]="50"
+  [scrollWindow]="false"
+  (scrolled)="onScroll()"
+>
+  <mat-toolbar class="app-bar">
+    <h5>Search:</h5>
+    <mat-form-field class="chip-form graphic">
+      <mat-chip-list #chipList>
+        <mat-chip
+          *ngFor="let query of queries"
+          removable
+          (removed)="removeQuery(query)"
+        >
+          {{ query }}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+        <input
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+          (matChipInputTokenEnd)="addQuery($event)"
+        />
+      </mat-chip-list>
+    </mat-form-field>
+    <mat-divider vertical></mat-divider>
+    <button mat-button (click)="export()">Export</button>
+    <mat-form-field class="export-format-form">
+      <mat-select [(value)]="exportFormat">
+        <mat-option value="json">JSON</mat-option>
+        <mat-option value="csv">CSV</mat-option>
+        <mat-option value="xml">XML</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-divider vertical></mat-divider>
+    <button mat-button (click)="reset()">Reset</button>
+    <mat-divider vertical></mat-divider>
+    <h5>Loading batches of {{ paginationAmount }}</h5>
+    <mat-slider
+      thumbLabel
+      min="10"
+      max="20"
+      step="1"
+      tickInterval="1"
+      (change)="submitWindow()"
+      [(ngModel)]="paginationAmount"
+      class="slider graphic"
+    ></mat-slider>
+    <mat-divider vertical></mat-divider>
+    <h5>API Quota</h5>
+    <mat-progress-bar
+      mode="determinate"
+      color="accent"
+      [value]="ratelimit"
+      class="progress-bar graphic"
+      matTooltip="{{ ratelimit }}%"
+      matTooltipPosition="below"
+    ></mat-progress-bar>
+  </mat-toolbar>
+
+  <ngx-masonry [options]="masonryOptions" class="grid">
+    <div ngxMasonryItem *ngFor="let photo of photos" class="grid-item">
+      <img
+        src="{{ photo.urls.small }}"
+        matTooltip="{{ photo.description || photo.alt_description || 'None' }}"
+      />
+    </div>
+  </ngx-masonry>
+</div>
