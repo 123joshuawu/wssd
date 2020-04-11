@@ -1,28 +1,24 @@
-import { Observable, Subscription, BehaviorSubject } from 'rxjs';
+import { Subscription } from 'rxjs';
 
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ViewChild,
-  HostListener,
-} from '@angular/core';
-// import { CollectionViewer, DataSource } from '@angular/cdk/collections';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { FormControl } from '@angular/forms';
 
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { NgxMasonryOptions, NgxMasonryComponent } from 'ngx-masonry';
-
 import { Socket } from 'ngx-socket-io';
+
+import { DeviceDetectorService } from 'ngx-device-detector';
 
 import { PhotoFeedService } from './photo-feed.service';
 
 import { ExportService } from './export.service';
 
 import * as fileSaver from 'file-saver';
+import { MatDialog } from '@angular/material/dialog';
+import { PhotoDialogComponent } from './photo-dialog.component';
 
 export type ErrorMsg = {
   queryUpdate: {
@@ -56,23 +52,36 @@ export class AppComponent implements OnInit, OnDestroy {
 
   errorObs = this.socket.fromEvent<ErrorMsg>('errorMsg');
 
-  masonryOptions: NgxMasonryOptions = {
-    itemSelector: '.grid-item',
-    gutter: 10,
-    fitWidth: true,
-  };
-
   exportFormat = 'json';
 
-  @ViewChild(NgxMasonryComponent, { static: false })
-  masonry: NgxMasonryComponent;
+  lastPhotoId: string = null;
+
+  isMobile = false;
 
   constructor(
     private photoFeed: PhotoFeedService,
     private exportService: ExportService,
     private _snackBar: MatSnackBar,
-    private socket: Socket
-  ) {}
+    private socket: Socket,
+    private dialog: MatDialog,
+    private deviceService: DeviceDetectorService
+  ) {
+    this.isMobile = this.deviceService.isMobile();
+  }
+
+  openPhotoDialog(photo: any) {
+    if (!this.isMobile) {
+      const dialogRef = this.dialog.open(PhotoDialogComponent, {
+        // width: '75%',
+        data: { photo },
+      });
+
+      dialogRef.afterClosed().subscribe((result) => {
+        console.log('done');
+        console.log(result);
+      });
+    }
+  }
 
   addQuery({ input, value }: MatChipInputEvent): void {
     console.log(`adding query ${input} and ${value}`);
@@ -107,7 +116,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onScroll() {
     console.log('scrolldown');
-    this.photoFeed.next(this.paginationAmount);
+    this.photoFeed.next(this.lastPhotoId);
   }
 
   export() {
@@ -120,25 +129,36 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   reset() {
-    this.photoFeed.reset();
+    // this.photoFeed.reset();
 
     this.photos.splice(0, this.photos.length);
 
-    this.photoFeed.next(this.paginationAmount);
+    this.photoFeed.next(this.lastPhotoId);
   }
 
   ngOnInit(): void {
     this._subs.add(
       this.photoFeed.feed.subscribe(
-        ({ data, ratelimit }: { data: any[]; ratelimit: number }) => {
-          this.ratelimit = ratelimit;
-          this.photos.push(...data);
+        ({
+          data,
+          ratelimit,
+          lastPhotoId,
+        }: {
+          data: any[];
+          ratelimit: number;
+          lastPhotoId: string;
+        }) => {
+          if (ratelimit) {
+            this.ratelimit = ratelimit;
+          }
+          if (lastPhotoId) {
+            this.lastPhotoId = lastPhotoId;
+          }
+          if (data.length > 0) {
+            this.photos.push(...data);
+            // this.lastPhotoId = data[data.length - 1]._id;
+          }
           console.log(`added ${data.length} new photos and ${ratelimit} limit`);
-          setTimeout(() => {
-            this.masonry._msnry.reloadItems();
-            this.masonry._msnry.layout();
-            console.log('layout reloaded');
-          }, 1000);
         }
       )
     );
@@ -161,6 +181,7 @@ export class AppComponent implements OnInit, OnDestroy {
       )
     );
     console.log('initialized');
+    this.onScroll();
   }
 
   ngOnDestroy(): void {

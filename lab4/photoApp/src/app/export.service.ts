@@ -9,12 +9,9 @@ export class ExportService {
   constructor(private http: HttpClient) {}
 
   export(format: string): Observable<Blob> {
-    return this.http.get(
-      `${environment.production ? '' : 'http://localhost:3000'}/export`,
-      {
-        params: new HttpParams().set('format', format),
-        responseType: 'blob',
-      }
-    );
+    return this.http.get(`${environment.apiUrl}/export`, {
+      params: new HttpParams().set('format', format),
+      responseType: 'blob',
+    });
   }
 }

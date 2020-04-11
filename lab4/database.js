@@ -21,14 +21,11 @@ module.exports = {
     if (count) {
       return await db
         .collection(collectionName)
-        .find(filters, { projection: { _id: 0 } })
+        .find(filters)
         .limit(count)
         .toArray();
     } else {
-      return await db
-        .collection(collectionName)
-        .find(filters, { projection: { _id: 0 } })
-        .toArray();
+      return await db.collection(collectionName).find(filters).toArray();
     }
   },
   async count(collectionName, filters = {}) {

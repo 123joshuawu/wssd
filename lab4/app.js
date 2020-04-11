@@ -36,11 +36,11 @@ const initPhotos = () => {
     logger.debug(
       `Currently ${currentPhotos.length} photos are stored in database`
     );
-    if (currentPhotos.length == 0) {
-      const { data } = await getPhotos({ per_page: 20 });
-      logger.debug(`Adding ${data.length} photos to the database`);
-      await database.save('photos', data);
-    }
+    // if (currentPhotos.length == 0) {
+    //   const { data } = await getPhotos({ per_page: 20 });
+    //   logger.debug(`Adding ${data.length} photos to the database`);
+    //   await database.save('photos', data);
+    // }
   });
 };
 initPhotos();
@@ -115,24 +115,25 @@ io.on('connection', (socket) => {
   logger.debug('Received connection');
   let feed = new PhotoFeed();
 
-  feed
-    .paginate()
-    .then(() => {
-      return feed.getWindow();
-    })
-    .then((photos) => {
-      // fs.appendFile('photos.js', JSON.stringify(photos), (err) => {logger.debug(`added to photos ${err}`)});
-      socket.emit('feed', photos);
-    })
-    .catch((err) => {
-      if (err.errors) {
-        socket.emit('errorMsg', { err });
-      }
-    });
+  // feed
+  // .paginate()
+  // .then(() => {
+  // return feed.getWindow();
+  // })
+  // .getNext()
+  // .then((photos) => {
+  // fs.appendFile('photos.js', JSON.stringify(photos), (err) => {logger.debug(`added to photos ${err}`)});
+  // socket.emit('feed', photos);
+  // })
+  // .catch((err) => {
+  // if (err.errors) {
+  // socket.emit('errorMsg', { err });
+  // }
+  // });
 
-  socket.on('next', ({ amount }) => {
+  socket.on('next', ({ lastPhotoId }) => {
     feed
-      .getNext(amount)
+      .getNext(lastPhotoId)
       .then((photos) => {
         // fs.appendFile('photos.js', JSON.stringify(photos), (err) => {logger.debug(`added to photos ${err}`)});
         socket.emit('feed', photos);

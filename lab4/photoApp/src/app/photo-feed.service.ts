@@ -9,8 +9,8 @@ export class PhotoFeedService {
 
   constructor(private socket: Socket) {}
 
-  next(amount?: number) {
-    this.socket.emit('next', { amount });
+  next(lastPhotoId: string) {
+    this.socket.emit('next', { lastPhotoId });
   }
 
   query(query: string, add: boolean = true) {

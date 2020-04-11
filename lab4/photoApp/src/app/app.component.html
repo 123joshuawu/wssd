@@ -7,6 +7,15 @@
   (scrolled)="onScroll()"
 >
   <mat-toolbar class="app-bar">
+    <h1
+      [hidden]="isMobile"
+      class="mat-display-3"
+      style="margin-bottom: 0;"
+      fx-hide.xs="true"
+    >
+      Phodo
+    </h1>
+    <mat-divider [hidden]="isMobile" vertical fx-hide.xs="true"></mat-divider>
     <h5>Search:</h5>
     <mat-form-field class="chip-form graphic">
       <mat-chip-list #chipList>
@@ -25,19 +34,21 @@
         />
       </mat-chip-list>
     </mat-form-field>
-    <mat-divider vertical></mat-divider>
-    <button mat-button (click)="export()">Export</button>
-    <mat-form-field class="export-format-form">
+    <mat-divider [hidden]="isMobile" vertical fx-hide.xs="true"></mat-divider>
+    <button mat-button (click)="export()" fxHide.lt-md="true">Export</button>
+    <mat-form-field class="export-format-form" fxHide.lt-md="true">
       <mat-select [(value)]="exportFormat">
         <mat-option value="json">JSON</mat-option>
         <mat-option value="csv">CSV</mat-option>
         <mat-option value="xml">XML</mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-divider vertical></mat-divider>
-    <button mat-button (click)="reset()">Reset</button>
-    <mat-divider vertical></mat-divider>
-    <h5>Loading batches of {{ paginationAmount }}</h5>
+    <mat-divider vertical fxHide.lt-md="true"></mat-divider>
+    <button [hidden]="isMobile" mat-button (click)="reset()" fx-hide.xs="true">
+      Reset
+    </button>
+    <mat-divider vertical fxHide.lt-md="true"></mat-divider>
+    <h5 fxHide.lt-md="true">Batch size: {{ paginationAmount }}</h5>
     <mat-slider
       thumbLabel
       min="10"
@@ -47,9 +58,10 @@
       (change)="submitWindow()"
       [(ngModel)]="paginationAmount"
       class="slider graphic"
+      fxHide.lt-md="true"
     ></mat-slider>
-    <mat-divider vertical></mat-divider>
-    <h5>API Quota</h5>
+    <mat-divider vertical fxHide.lt-lg="true"></mat-divider>
+    <h5 fxHide.lt-lg="true">Quota</h5>
     <mat-progress-bar
       mode="determinate"
       color="accent"
@@ -57,15 +69,32 @@
       class="progress-bar graphic"
       matTooltip="{{ ratelimit }}%"
       matTooltipPosition="below"
+      fxHide.lt-lg="true"
     ></mat-progress-bar>
   </mat-toolbar>
 
-  <ngx-masonry [options]="masonryOptions" class="grid">
-    <div ngxMasonryItem *ngFor="let photo of photos" class="grid-item">
+  <ng-masonry-grid
+    [masonryOptions]="{
+      transitionDuration: '0.8s',
+      gutter: 5,
+      columnWidth: 300,
+      fitWidth: true
+    }"
+    [useAnimation]="true"
+    [useImagesLoaded]="true"
+    [scrollAnimationOptions]="{
+      animationEffect: 'effect-4',
+      minDuration: 0.4,
+      maxDuration: 0.7
+    }"
+  >
+    <ng-masonry-grid-item *ngFor="let photo of photos" class="masonry-item">
       <img
-        src="{{ photo.urls.small }}"
-        matTooltip="{{ photo.description || photo.alt_description || 'None' }}"
+        [src]="photo.urls.small"
+        [matTooltip]="photo.description || photo.alt_description || 'None'"
+        (click)="openPhotoDialog(photo)"
+        [style.cursor]="isMobile ? 'none' : 'pointer'"
       />
-    </div>
-  </ngx-masonry>
+    </ng-masonry-grid-item>
+  </ng-masonry-grid>
 </div>

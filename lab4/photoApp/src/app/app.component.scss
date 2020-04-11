@@ -2,6 +2,7 @@
   height: 100%;
   width: 100%;
   overflow: scroll;
+  background-color: black;
 }
 
 .app-bar {
@@ -43,10 +44,17 @@
   margin-top: 50px;
 }
 
-.grid {
-  margin: 0 auto;
-
-  .grid-item {
-    margin-bottom: 5px;
+$width: 300px;
+$auto: auto;
+ng-masonry-grid {
+  margin: 0 $auto;
+}
+.masonry-item {
+  height: $auto;
+  width: $width;
+  img {
+    height: $auto;
+    width: $width;
+    display: inline-block;
   }
 }

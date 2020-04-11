@@ -9,9 +9,14 @@ const database = require('../database');
 
 const { getPhotos, getRandomPhoto } = require('../services/UnsplashService.js');
 
+const { ObjectID } = require('mongodb');
+
 class PhotoFeed {
-  constructor(seed = Math.random() * 100) {
-    this.page = seed - 1;
+  static PHOTO_COLL = 'photos';
+
+  constructor() {
+    // this.page = seed - 1;
+    this.page = 210; // used for seeding the database
     this.photos = [];
     this.storedPhotos = [];
     this.windowSize = 10;
@@ -53,7 +58,9 @@ class PhotoFeed {
       this.page++;
       logger.debug(`Paginated now on page ${this.page}`);
 
-      const data = await database.find('photos', {}, 10);
+      // const data = await database.find('photos', {}, 10);
+      const { data, rateLimit } = await getPhotos({ page: this.page });
+      this.updateRateLimit(rateLimit);
 
       if (data.length === 0) {
         logger.debug(`Sleeping ${i} seconds`);
@@ -62,9 +69,8 @@ class PhotoFeed {
       } else {
         logger.debug(`Storing ${data.length} photos from ${this.page}`);
         this.storedPhotos.push(...data);
+        database.save('photos', data);
       }
-      //   const { data, rateLimit } = await getPhotos({ page: this.page });
-      //   this.updateRateLimit(rateLimit);
     }
 
     retrieved = retrieved.concat(this.storedPhotos.splice(0, remaining));
@@ -121,15 +127,65 @@ class PhotoFeed {
     }
   }
 
-  async getNext(amount = 1) {
-    logger.debug(`Getting next ${amount} photos`);
-    if (this.windowStart + this.windowSize + amount >= this.photos.length) {
-      await this.paginate();
+  async getNext(lastPhotoId = null) {
+    logger.debug(`Getting next ${this.windowSize} photos with ${lastPhotoId}`);
+    // if (this.windowStart + this.windowSize >= this.photos.length) {
+    //   await this.paginate();
+    // }
+
+    // const data = this.getWindow();
+
+    // this.windowStart += this.windowSize;
+
+    // return data;
+
+    const photos = [];
+    let retrieved = [];
+
+    const partitions = this.queries.length + 1;
+    const partitionSize = Math.floor(this.windowSize / partitions);
+    logger.debug(
+      `Paginating for ${partitions} partitions of ${partitionSize} size`
+    );
+
+    if (this.queries.length > 0) {
+      const results = await Promise.all(
+        this.queries.map((query) =>
+          getRandomPhoto({ query, count: partitionSize })
+        )
+      );
+      retrieved = results.map((p) => p.data).flat();
+      logger.debug(
+        `Retrieved ${this.queries.length} queries: ${retrieved.map(
+          (r) => r.id
+        )}`
+      );
+
+      results.forEach(({ rateLimit }) => this.updateRateLimit(rateLimit));
     }
 
-    this.windowStart += amount;
+    const remaining = this.windowSize - retrieved.length;
 
-    return this.getWindow();
+    const storedPhotos = await database.find(
+      PhotoFeed.PHOTO_COLL,
+      lastPhotoId ? { _id: { $gt: new ObjectID(lastPhotoId) } } : null,
+      remaining
+    );
+
+    lastPhotoId = storedPhotos[storedPhotos.length - 1]._id;
+
+    retrieved = retrieved.concat(storedPhotos);
+    logger.debug(`Added paged photos: ${retrieved.map((r) => r.id)}`);
+
+    retrieved.sort(() => Math.random() - 0.5);
+    logger.debug(`Shuffled: ${retrieved.map((r) => r.id)}`);
+
+    photos.push(...retrieved);
+    logger.info(`Added ${retrieved.length} photos`);
+
+    logger.debug(`Got ${photos.length} photos`);
+
+    return { data: photos, lastPhotoId };
   }
 
   setWindow(window) {

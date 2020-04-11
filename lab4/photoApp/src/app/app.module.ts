@@ -19,10 +19,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
 
 import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 
-import { NgxMasonryModule } from 'ngx-masonry';
+import { NgMasonryGridModule } from 'ng-masonry-grid';
+
+import { FlexLayoutModule } from '@angular/flex-layout';
+import { DeviceDetectorModule } from 'ngx-device-detector';
 
 import { PhotoFeedService } from './photo-feed.service';
 
@@ -30,15 +34,17 @@ import { AppComponent } from './app.component';
 import { HttpClientModule } from '@angular/common/http';
 import { ExportService } from './export.service';
 
+import { environment } from '../environments/environment';
+import { PhotoDialogComponent } from './photo-dialog.component';
+
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, PhotoDialogComponent],
   imports: [
     BrowserModule,
-    SocketIoModule.forRoot({ url: 'localhost:3000' }), //window.location.host }),
+    SocketIoModule.forRoot({ url: environment.apiUrl }),
     BrowserAnimationsModule,
     MatCardModule,
     MatToolbarModule,
-    NgxMasonryModule,
     ScrollingModule,
     MatSliderModule,
     FormsModule,
@@ -54,8 +60,12 @@ import { ExportService } from './export.service';
     MatSelectModule,
     MatButtonModule,
     HttpClientModule,
+    NgMasonryGridModule,
+    MatDialogModule,
+    FlexLayoutModule,
+    DeviceDetectorModule.forRoot(),
   ],
   providers: [PhotoFeedService, ExportService],
-  bootstrap: [AppComponent],
+  bootstrap: [AppComponent, PhotoDialogComponent],
 })
 export class AppModule {}
